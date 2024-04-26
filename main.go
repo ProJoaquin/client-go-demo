@@ -31,7 +31,6 @@ func main() {
 	factory := informers.NewSharedInformerFactory(clientset, 0)
 	servicesInformer := factory.Core().V1().Services()
 	ingressInformer := factory.Networking().V1().Ingresses()
-
 	controller := pkg.Newcontroller(clientset, servicesInformer, ingressInformer)
 	stopCh := make(chan struct{})
 	factory.Start(stopCh)

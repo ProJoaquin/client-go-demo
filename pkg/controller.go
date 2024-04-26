@@ -49,7 +49,7 @@ func (c controller) deleteIngress(obj interface{}) {
 	if ownerReference == nil {
 		return
 	}
-	if ownerReference.Kind != "service" {
+	if ownerReference.Kind != "S ervice" {
 		return
 	}
 	c.queue.Add(ingress.Namespace + "/" + ingress.Name)
@@ -134,8 +134,9 @@ func (c controller) syncService(key string) error {
 }
 
 func (c controller) handleError(key string, err error) {
-	if c.queue.NumRequeues(key) > maxRetry {
+	if c.queue.NumRequeues(key) <= maxRetry {
 		c.queue.AddRateLimited(key)
+		return
 	}
 
 	runtime.HandleError(err)
@@ -144,16 +145,17 @@ func (c controller) handleError(key string, err error) {
 
 // 可用yaml嵌入代替construct
 func (c controller) constructIngress(service *v17.Service) *v15.Ingress {
-	ingress := &v15.Ingress{}
-
+	ingress := v15.Ingress{}
 	ingress.ObjectMeta.OwnerReferences = []v16.OwnerReference{
-		*v16.NewControllerRef(service, v16.SchemeGroupVersion.WithKind("service")),
+		*v16.NewControllerRef(service, v16.SchemeGroupVersion.WithKind("Service")),
 	}
 	ingress.Name = service.Name
 	ingress.Namespace = service.Namespace
 
-	pathtype := v15.PathTypePrefix
+	pathType := v15.PathTypePrefix
+	icn := "nginx"
 	ingress.Spec = v15.IngressSpec{
+		IngressClassName: &icn,
 		Rules: []v15.IngressRule{
 			{
 				Host: "example.com",
@@ -162,7 +164,7 @@ func (c controller) constructIngress(service *v17.Service) *v15.Ingress {
 						Paths: []v15.HTTPIngressPath{
 							{
 								Path:     "/",
-								PathType: &pathtype,
+								PathType: &pathType,
 								Backend: v15.IngressBackend{
 									Service: &v15.IngressServiceBackend{
 										Name: service.Name,
@@ -179,7 +181,7 @@ func (c controller) constructIngress(service *v17.Service) *v15.Ingress {
 			},
 		},
 	}
-	return ingress
+	return &ingress
 }
 
 func Newcontroller(client kubernetes.Interface, serviceInformer informer.ServiceInformer, ingressInformer netInformer.IngressInformer) controller {
