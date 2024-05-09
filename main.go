@@ -27,7 +27,7 @@ func main() {
 		log.Fatalln("create clientset failed")
 	}
 
-	//
+	// factory
 	factory := informers.NewSharedInformerFactory(clientset, 0)
 	servicesInformer := factory.Core().V1().Services()
 	ingressInformer := factory.Networking().V1().Ingresses()
